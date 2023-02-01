@@ -1,13 +1,15 @@
 extern crate rusqlite;
 
 use chrono::Utc;
-use rusqlite::{params, Connection, Result};
+use rusqlite::{params, Connection, Error, Result};
 
+#[derive(Debug)]
 pub struct User {
-    id: Option<i32>,
-    username: String,
+    pub id: Option<i32>,
+    pub username: String,
 }
 
+#[derive(Debug)]
 pub struct Chat {
     id: Option<i32>,
     name: String,
@@ -16,6 +18,7 @@ pub struct Chat {
     updated_at: String,
 }
 
+#[derive(Debug)]
 pub struct Message {
     id: Option<i32>,
     chat_id: i32,
@@ -68,29 +71,61 @@ fn create_table(conn: &Connection, sql: &str) -> Result<usize> {
     conn.execute(sql, params![])
 }
 
-fn add_user(conn: &Connection, user: &User) -> Result<()> {
+pub fn add_user(conn: &Connection, user: &User) -> Result<User> {
     let now = Utc::now().to_rfc3339();
     conn.execute(
         "INSERT INTO user(username, created_at, updated_at) VALUES (?1, ?2, ?3)",
-        params![user.username, now, now],
+        params![user.username.trim_end(), now, now],
     )?;
-    Ok(())
+    let mut stmt = conn.prepare("SELECT id, username FROM user ORDER BY id DESC LIMIT 1")?;
+    let user_iter = stmt.query_map([], |row| {
+        Ok(User {
+            id: row.get(0)?,
+            username: row.get(1)?,
+        })
+    })?;
+    user_iter.last().unwrap()
 }
 
-fn add_chat(conn: &Connection, chat: &Chat) -> Result<()> {
+pub fn add_chat(conn: &Connection, chat: &Chat) -> Result<Chat> {
     let now = Utc::now().to_rfc3339();
     conn.execute(
         "INSERT INTO chat(name, owner_id, created_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
         params![chat.name, chat.owner_id, now, now],
     )?;
-    Ok(())
+    let mut stmt = conn.prepare(
+        "SELECT id, name, owner_id, created_at, updated_at FROM chat ORDER BY id DESC LIMIT 1",
+    )?;
+    let chat_iter = stmt.query_map([], |row| {
+        Ok(Chat {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            owner_id: row.get(2)?,
+            created_at: row.get(3)?,
+            updated_at: row.get(4)?,
+        })
+    })?;
+    chat_iter.last().unwrap()
 }
 
-fn add_message(conn: &Connection, message: &Message) -> Result<()> {
+pub fn add_message(conn: &Connection, message: &Message) -> Result<Message> {
     let now = Utc::now().to_rfc3339();
     conn.execute(
         "INSERT INTO message(chat_id, member_id, text, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)",
         params![message.chat_id, message.member_id, message.text, now, now],
     )?;
-    Ok(())
+    let mut stmt = conn.prepare(
+        "SELECT id, chat_id, member_id, text, created_at, updated_at FROM message ORDER BY id DESC LIMIT 1",
+    )?;
+    let message_iter = stmt.query_map([], |row| {
+        Ok(Message {
+            id: row.get(0)?,
+            chat_id: row.get(1)?,
+            member_id: row.get(2)?,
+            text: row.get(3)?,
+            created_at: row.get(4)?,
+            updated_at: row.get(5)?,
+        })
+    })?;
+    message_iter.last().unwrap()
 }
