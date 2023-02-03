@@ -1,7 +1,7 @@
 extern crate rusqlite;
 
 use chrono::Utc;
-use rusqlite::{params, Connection, Error, Result};
+use rusqlite::{params, Connection, Result};
 
 #[derive(Debug)]
 pub struct User {
@@ -11,21 +11,21 @@ pub struct User {
 
 #[derive(Debug)]
 pub struct Chat {
-    id: Option<i32>,
-    name: String,
-    owner_id: i32,
-    created_at: String,
-    updated_at: String,
+    pub id: Option<i32>,
+    pub owner_id: i32,
+    pub name: String,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
 }
 
 #[derive(Debug)]
 pub struct Message {
-    id: Option<i32>,
-    chat_id: i32,
-    member_id: i32,
-    text: String,
-    created_at: String,
-    updated_at: String,
+    pub id: Option<i32>,
+    pub chat_id: i32,
+    pub member_id: i32,
+    pub text: String,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
 }
 
 pub fn open() -> Result<Connection> {
@@ -47,8 +47,8 @@ pub fn init(conn: &Connection) -> Result<()> {
         conn,
         "CREATE TABLE chat (
             id              INTEGER PRIMARY KEY,
-            name            TEXT,
             owner_id        INTEGER,
+            name            TEXT,
             created_at      TEXT NOT NULL,
             updated_at      TEXT NOT NULL
           )",
@@ -90,17 +90,17 @@ pub fn add_user(conn: &Connection, user: &User) -> Result<User> {
 pub fn add_chat(conn: &Connection, chat: &Chat) -> Result<Chat> {
     let now = Utc::now().to_rfc3339();
     conn.execute(
-        "INSERT INTO chat(name, owner_id, created_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
-        params![chat.name, chat.owner_id, now, now],
+        "INSERT INTO chat(owner_id, name, created_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
+        params![chat.owner_id, chat.name, now, now],
     )?;
     let mut stmt = conn.prepare(
-        "SELECT id, name, owner_id, created_at, updated_at FROM chat ORDER BY id DESC LIMIT 1",
+        "SELECT id, owner_id, name, created_at, updated_at FROM chat ORDER BY id DESC LIMIT 1",
     )?;
     let chat_iter = stmt.query_map([], |row| {
         Ok(Chat {
             id: row.get(0)?,
-            name: row.get(1)?,
-            owner_id: row.get(2)?,
+            owner_id: row.get(1)?,
+            name: row.get(2)?,
             created_at: row.get(3)?,
             updated_at: row.get(4)?,
         })
