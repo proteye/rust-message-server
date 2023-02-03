@@ -36,17 +36,15 @@ fn handle_connection(conn: &Connection, mut stream: TcpStream) {
     let mut buffer = [0; 512];
     stream.read(&mut buffer).unwrap();
 
-    let msg = String::from_utf8_lossy(&buffer);
-    println!("recv: {}", msg);
+    let cmd = &buffer[0];
+    let msg = String::from_utf8_lossy(&buffer[1..]);
+    println!("recv: <{}>:'{}'", cmd, msg);
+
     stream.write(b"<result>:ok").unwrap();
     stream.flush().unwrap();
 
-    let pos = msg.chars().position(|c| c == '>').unwrap();
-    let cmd = &msg[1..pos];
-    println!("Command: '{}'", cmd);
-
-    if cmd == "user" {
-        let username = &msg[(pos + 2)..].trim().trim_end_matches('\0');
+    if cmd == &0b0001 {
+        let username = &msg.trim().trim_end_matches('\0');
         let user = database::User {
             id: None,
             username: username.to_string(),
