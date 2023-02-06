@@ -1,5 +1,7 @@
 extern crate rusqlite;
 
+use std::fmt;
+
 use chrono::Utc;
 use rusqlite::{params, Connection, Result};
 
@@ -7,6 +9,12 @@ use rusqlite::{params, Connection, Result};
 pub struct User {
     pub id: Option<i32>,
     pub username: String,
+}
+
+impl fmt::Display for User {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "User (id: {:?}, username: {:?})", self.id, self.username)
+    }
 }
 
 #[derive(Debug)]
@@ -18,6 +26,16 @@ pub struct Chat {
     pub updated_at: Option<String>,
 }
 
+impl fmt::Display for Chat {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Chat (id: {:?}, owner_id: {:?}, name: {:?}, created_at: {:?}, updated_at: {:?})",
+            self.id, self.owner_id, self.name, self.created_at, self.updated_at
+        )
+    }
+}
+
 #[derive(Debug)]
 pub struct Message {
     pub id: Option<i32>,
@@ -26,6 +44,16 @@ pub struct Message {
     pub text: String,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
+}
+
+impl fmt::Display for Message {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Message (id: {:?}, chat_id: {:?}, member_id: {:?}, text: {:?}, created_at: {:?}, updated_at: {:?})",
+            self.id, self.chat_id, self.member_id, self.text, self.created_at, self.updated_at
+        )
+    }
 }
 
 pub fn open() -> Result<Connection> {
