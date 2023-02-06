@@ -68,8 +68,12 @@ fn handle_connection(conn: &Connection, mut stream: TcpStream) {
         }
     } else if cmd == &0b0010 {
         let splitted: Vec<&str> = msg.split(MESSAGE_SEPARATOR).collect();
-        let owner_id = splitted[0].parse();
+        if splitted.len() < 2 {
+            println!("Error message params: {}", msg);
+            return;
+        }
 
+        let owner_id = splitted[0].parse();
         if owner_id.is_err() {
             println!("Error chat owner_id: {}", splitted[0]);
             return;
@@ -78,7 +82,7 @@ fn handle_connection(conn: &Connection, mut stream: TcpStream) {
         let chat = database::Chat {
             id: None,
             owner_id: owner_id.unwrap(),
-            name: splitted[1].to_string(),
+            name: splitted[1].trim().to_string(),
             created_at: None,
             updated_at: None,
         };
@@ -88,6 +92,40 @@ fn handle_connection(conn: &Connection, mut stream: TcpStream) {
             println!("Error chat adding: {}", result.unwrap_err());
         } else {
             println!("Chat added: '{:?}'", result);
+        }
+    } else if cmd == &0b0100 {
+        let splitted: Vec<&str> = msg.split(MESSAGE_SEPARATOR).collect();
+        if splitted.len() < 3 {
+            println!("Error message params: {}", msg);
+            return;
+        }
+
+        let chat_id = splitted[0].parse();
+        if chat_id.is_err() {
+            println!("Error message chat_id: {}", splitted[0]);
+            return;
+        }
+
+        let member_id = splitted[1].parse();
+        if member_id.is_err() {
+            println!("Error message member_id: {}", splitted[1]);
+            return;
+        }
+
+        let message = database::Message {
+            id: None,
+            chat_id: chat_id.unwrap(),
+            member_id: member_id.unwrap(),
+            text: splitted[2].trim().to_string(),
+            created_at: None,
+            updated_at: None,
+        };
+
+        let result = database::add_message(conn, &message);
+        if result.is_err() {
+            println!("Error message adding: {}", result.unwrap_err());
+        } else {
+            println!("Message added: '{:?}'", result);
         }
     }
 }

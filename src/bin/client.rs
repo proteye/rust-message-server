@@ -17,4 +17,11 @@ fn main() {
         return;
     }
     println!("recv: {}", result.unwrap());
+    // Add message
+    let result = client::send("message", "1;2;Hello!");
+    if result.is_err() {
+        println!("Error client::send: {}", result.unwrap_err());
+        return;
+    }
+    println!("recv: {}", result.unwrap());
 }
